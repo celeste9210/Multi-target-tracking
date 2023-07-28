@@ -2,6 +2,7 @@
 #include <ctime>
 #include <algorithm>
 #include <random>
+#include <map>
 // #include <opencv2/opencv.hpp>
 #include "D:/Softwares/OpenCV320/build/include/opencv2/opencv.hpp"
 
@@ -31,26 +32,27 @@ public:
 	}
 };
 
-Scalar colors[] = { Scalar(0, 0, 255),    // 红色
-Scalar(0, 255, 0),    // 绿色
-Scalar(0, 128, 255),  // 橙色
-Scalar(0, 255, 255),  // 黄色
-Scalar(255, 255, 0),  // 青色
-Scalar(255, 0, 255),  // 洋红色
-Scalar(0, 0, 128),    // 深红色
-Scalar(0, 128, 0),    // 深绿色
-Scalar(255, 0, 128),  // 紫色
-Scalar(128, 128, 0),  // 深黄色
-Scalar(128, 0, 128),  // 深紫色
-Scalar(128, 128, 0),  // 深青色
-Scalar(128, 255, 0),  // 青绿色
-Scalar(255, 0, 0),    // 深蓝色
-Scalar(128, 128, 255), // 浅红色
-Scalar(255, 0, 0),    // 蓝色
-Scalar(128, 255, 128), // 浅绿色
-Scalar(255, 128, 128), // 浅蓝色
-Scalar(128, 255, 255), // 浅黄色
-Scalar(255, 128, 255)  // 浅洋红色
+Scalar colors[] = { Scalar(0, 0, 255),    // 红色 0
+Scalar(0, 255, 0),    // 绿色 1
+Scalar(0, 128, 255),  // 橙色 2
+Scalar(0, 255, 255),  // 黄色 3
+Scalar(255, 255, 0),  // 青色 4
+Scalar(255, 0, 255),  // 洋红色 5
+Scalar(0, 0, 128),    // 深红色 6
+Scalar(0, 128, 0),    // 深绿色 7
+Scalar(255, 0, 128),  // 紫色 8
+Scalar(128, 128, 0),  // 深黄色 9
+Scalar(128, 0, 128),  // 深紫色 10
+Scalar(128, 128, 0),  // 深青色 11
+Scalar(128, 255, 0),  // 青绿色 12
+Scalar(255, 0, 0),    // 深蓝色 13
+Scalar(128, 128, 255), // 浅红色 14
+Scalar(255, 0, 0),    // 蓝色 15
+Scalar(128, 255, 128), // 浅绿色 16
+Scalar(255, 128, 128), // 浅蓝色 17
+Scalar(128, 255, 255), // 浅黄色 18
+Scalar(255, 128, 255),  // 浅洋红色 19
+Scalar(255, 255, 255)  // 白色 20
 
 };
 
@@ -233,7 +235,7 @@ float calcuDistance(double* ptr, double* ptrCen, int cols) {
 }
 
 
-/** @brief   最大最小距离算法
+/** @brief   最大最小距离聚类
 @param data  输入样本数据，每一行为一个样本，每个样本可以存在多个特征数据
 @param Theta 阈值，一般设置为0.5，阈值越小聚类中心越多
 @param centerIndex 聚类中心的下标
@@ -246,49 +248,51 @@ Mat  MaxMinDisFun(Mat data, float Theta, vector<int>& centerIndex)
 	int index = start; //相当于指针指示新中心点的位置
 	int k = 0;        //中心点计数，也即是类别
 	int dataNum = data.rows; //输入的样本数
-							 //vector<int>	centerIndex;//保存中心点
+	//vector<int>	centerIndex;// 记录聚类中心是第几个样本
 	cv::Mat distance = cv::Mat::zeros(cv::Size(1, dataNum), CV_32FC1); //表示所有样本到当前聚类中心的距离
 	cv::Mat minDistance = cv::Mat::zeros(cv::Size(1, dataNum), CV_32FC1); //取较小距离
-
-
-	cv::Mat classes = cv::Mat::zeros(cv::Size(1, dataNum), CV_32SC1);     //表示类别
+	cv::Mat classes = cv::Mat::zeros(cv::Size(1, dataNum), CV_32SC1);     //表示每个点属于哪个类别
 	centerIndex.push_back(index); //保存第一个聚类中心
 
-	for (size_t i = 0; i < dataNum; i++)
+	for (size_t i = 0; i < dataNum; i++) 
 	{
 		double* ptr1 = data.ptr<double>(i);
-		double* ptrCen = data.ptr<double>(centerIndex.at(0));
-		int ta = *ptr1;
-		int ba = *ptrCen;
+		double* ptrCen = data.ptr<double>(centerIndex[0]);
+		//int ta = *ptr1;
+		//int ba = *ptrCen;
 		float d = calcuDistance(ptr1, ptrCen, data.cols);
 		distance.at<float>(i, 0) = d;
-		classes.at<int>(i, 0) = k + 1;
+		classes.at<int>(i, 0) = k + 1; // 初始时全划为第1类
 		if (maxDistance < d)
 		{
 			maxDistance = d;
 			index = i; //与第一个聚类中心距离最大的样本
-		}
+		}// index:第二个聚类中心，maxDistance:第1-2个聚类中心之间的距离 distance:每个点和第一个聚类中心的距离
 	}
+	
 
-	minDistance = distance.clone();
-	double minVal; double maxVal; cv::Point minLoc; cv::Point maxLoc;
-	maxVal = maxDistance;
-	while (maxVal > (maxDistance*Theta)) {
+	minDistance = distance.clone(); // minDistance:每个点和第一个(上一个)聚类中心的距离
+	double minVal; double maxVal; Point minLoc; Point maxLoc;
+	maxVal = maxDistance; // Z1-Z2距离
+	while (maxVal > (maxDistance*Theta)) 
+	{
 		k = k + 1;
 		centerIndex.push_back(index); //新的聚类中心
 		for (size_t i = 0; i < dataNum; i++)
 		{
 			double* ptr1 = data.ptr<double>(i);
-			double* ptrCen = data.ptr<double>(centerIndex.at(k));
+			double* ptrCen = data.ptr<double>(centerIndex[k]);
 			float d = calcuDistance(ptr1, ptrCen, data.cols);
-			distance.at<float>(i, 0) = d;
+			distance.at<float>(i, 0) = d; //和当前聚类中心的距离
 			//按照当前最近临方式分类，哪个近就分哪个类别
-			if (minDistance.at<float>(i, 0) > distance.at<float>(i, 0))
+			// 到当前聚类中心的距离 < 到上一个聚类中心的距离，则划分为当前聚类中心
+			// 但应该考虑同一目标位置相近且不超过一定误差范围
+			if (distance.at<float>(i, 0) < minDistance.at<float>(i, 0) && distance.at<float>(i, 0) < 200)
 			{
 				minDistance.at<float>(i, 0) = distance.at<float>(i, 0);
 				classes.at<int>(i, 0) = k + 1;
 			}
-		}
+		} 
 		//查找minDistance中最大值
 		cv::minMaxLoc(minDistance, &minVal, &maxVal, &minLoc, &maxLoc);
 		index = maxLoc.y;
@@ -297,7 +301,7 @@ Mat  MaxMinDisFun(Mat data, float Theta, vector<int>& centerIndex)
 }
 
 /*多属性关联*/
-void MAA(vector<uavData> uavDatas)
+void MAA(vector<uavData> uavDatas,Mat& mImage)
 {
 	Mat data = Mat::zeros(uavDatas[0].targetPosition.size()*uavDatas.size(), 2, CV_64FC1);
 	// 将每个无人机的目标位置数据导入聚类矩阵
@@ -312,13 +316,17 @@ void MAA(vector<uavData> uavDatas)
 			m++;
 		}
 	}
-	/*data = data.t();*/
+	
 	vector<int> centerIndex;
 	// 目前取0.3较为合理
-	float Theta = 0.2; // 该参数应根据雷达误差和目标最近距离综合设定。越小则簇的数量越多，可能聚类不准。越大则簇越少，可能聚类不准
+	float Theta = 0.1; // 该参数应根据雷达误差和目标最近距离综合设定。越小则簇的数量越多，可能聚类不准。越大则簇越少，可能聚类不准
 	Mat classes = MaxMinDisFun(data, Theta, centerIndex);
+
+	// 绘图
+	map<int,int> cnt;
+	
 	classes.convertTo(classes, CV_8UC1);
-	Mat mImage = Mat::zeros(5000, 5000, CV_8UC3);
+	//Mat mImage = Mat::zeros(5000, 5000, CV_8UC3);
 	uchar* pcls = classes.data;
 	int k = 0;
 	for (int i = 0; i < uavDatas.size(); ++i)
@@ -326,9 +334,17 @@ void MAA(vector<uavData> uavDatas)
 		for (int j = 0; j < uavDatas[i].targetPosition.size(); ++j)
 		{
 			uavDatas[i].targetPosition[j].y = mImage.rows - uavDatas[i].targetPosition[j].y;
-			circle(mImage, uavDatas[i].targetPosition[j], 10, colors[i], -1);
 			putText(mImage, std::to_string(pcls[k++]), uavDatas[i].targetPosition[j] + Point2f(-30, 0),
 				cv::FONT_HERSHEY_SIMPLEX, 2, CV_RGB(255, 255, 255), 2);
+
+			if (!cnt.count(pcls[k-1])) // 第一次出现(即聚类中心)画白色
+			{
+				cnt.insert({ pcls[k - 1], 0 });
+				cnt[pcls[k - 1]]++;
+				circle(mImage, uavDatas[i].targetPosition[j], 10, colors[20], -1);
+			}
+			else
+				circle(mImage, uavDatas[i].targetPosition[j], 10, colors[i], -1);
 		}
 	}
 	waitKey();
@@ -359,16 +375,16 @@ int main()
 	coordinatCvt(sysLocationImage, uavDatas, center);
 	// 画出目标在大地坐标系位置
 	drawPoint(RealLocationImage, targetLocation, Scalar(0, 255, 255), 0);
-	for (int i = 0; i < uavDatas.size(); ++i)
+	/*for (int i = 0; i < uavDatas.size(); ++i)
 	{
 		int textIndex = 0;
 		drawPoint(sysLocationImage, uavDatas[i].targetPosition, colors[i], 10);
-	}
+	}*/
 	// 初始状态生成完成
 	int ntime = 60; // 60秒
 	for (int i = 0; i < ntime; ++i)
 	{
-		MAA(uavDatas);
+		MAA(uavDatas, sysLocationImage);
 		// 多属性关联
 		// 状态更新
 	}
@@ -401,4 +417,6 @@ inline double getdisTheta(Point2f uav, Point2f target)
 first commit: 最初各个函数还没写好
 second commit: 完成了各物体静态时数据生成与转换的函数
 third commit: 完成了最大最小距离聚类，点多的时候很差
+4th commit: 完成了最大最小聚类的修改，加入了最近邻的一些限制，效果改善，但目标距离较近时仍可能聚类错误。
+			下一步考虑雷达测量误差、目标之间的距离 与 聚类中心参数和最近邻参数的关系
 */
