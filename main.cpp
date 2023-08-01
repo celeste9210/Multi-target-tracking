@@ -12,6 +12,7 @@ using namespace cv;
 
 double getdisTheta(Point2f uav, Point2f target);
 double getDistance(Point2f p1, Point2f p2);
+double getRSpeed(Point2f targetSpeed, double theta);
 
 class uavData
 {
@@ -21,7 +22,7 @@ public:
 	vector<double> distance; // 目标雷达距离
 	vector<double> disTheta; // 目标雷达方位角 0-360
 	vector<Point2f> targetPosition; // 目标转化到同一坐标系后的坐标
-	vector<double> speed; // 目标径向速度
+	vector<double> speed; // 目标径向速度   
 	/* 其他数据 */
 	vector<vector<double>> HRRP; // 目标一维距离像
 		/* ... */
@@ -131,7 +132,7 @@ void calculateRadarInfo(vector<uavData>& uavDatas, vector<Point2f>& targetLocati
 			double edis = 0;*/
 			uavDatas[m].distance.push_back(getDistance(uavDatas[m].position, targetLocation[i]) + edis);// 无人机与目标距离
 			uavDatas[m].disTheta.push_back(getdisTheta(uavDatas[m].position, targetLocation[i]) + ethe);// 无人机与目标角度(笛卡尔坐标系0-180)
-
+			//uavDatas[m].speed.push_back(getRSpeed(targetSpeed[i], getdisTheta(uavDatas[m].position, targetLocation[i]) + ethe));//目标径向速度
 		}
 	}
 
@@ -214,9 +215,9 @@ int drawPoint(Mat& input, vector<Point2f> vPoints, Scalar pointColor, int textIn
 	{
 		vPoints[i].y = input.rows - vPoints[i].y;
 		circle(input, vPoints[i], pointSize, pointColor, -1);
-		putText(input, std::to_string(textIndex), vPoints[i] + Point2f(-30, 0),
-			cv::FONT_HERSHEY_SIMPLEX, textSize, CV_RGB(255, 255, 255), 1.8);
-		textIndex++;
+		/*putText(input, std::to_string(textIndex), vPoints[i] + Point2f(-30, 0),
+			cv::FONT_HERSHEY_SIMPLEX, textSize, CV_RGB(255, 255, 255), 2);
+		textIndex++;*/
 	}
 	return 0;
 }
@@ -226,7 +227,7 @@ int drawPoint(Mat& input, vector<Point2f> vPoints, Scalar pointColor, int textIn
 /*计算欧式距离*/
 float calcuDistance(double* ptr, double* ptrCen, int cols) {
 	float d = 0.0;
-	for (size_t j = 0; j < cols; j++)
+	for (int j = 0; j < cols; j++)
 	{
 		d += (double)(ptr[j] - ptrCen[j])*(ptr[j] - ptrCen[j]);
 	}
@@ -238,23 +239,28 @@ float calcuDistance(double* ptr, double* ptrCen, int cols) {
 /** @brief   最大最小距离聚类
 @param data  输入样本数据，每一行为一个样本，每个样本可以存在多个特征数据
 @param Theta 阈值，一般设置为0.5，阈值越小聚类中心越多
+@param stt 第一个聚类中心是哪个数据
 @param centerIndex 聚类中心的下标
 @return 返回每个样本的类别，类别从1开始，0表示未分类或者分类失败
 */
-Mat  MaxMinDisFun(Mat data, float Theta, vector<int>& centerIndex)
+Mat  MaxMinDisFun(Mat data1, float Theta, int stt, vector<int>& centerIndex)
 {
+	centerIndex.clear();
+	Mat data;
+	// 归一化
+	normalize(data1, data);
 	double maxDistance = 0;
-	int start = 0;    //初始选一个中心点
+	int start = stt;    //初始选一个中心点
 	int index = start; //相当于指针指示新中心点的位置
 	int k = 0;        //中心点计数，也即是类别
 	int dataNum = data.rows; //输入的样本数
 	//vector<int>	centerIndex;// 记录聚类中心是第几个样本
-	cv::Mat distance = cv::Mat::zeros(cv::Size(1, dataNum), CV_32FC1); //表示所有样本到当前聚类中心的距离
-	cv::Mat minDistance = cv::Mat::zeros(cv::Size(1, dataNum), CV_32FC1); //取较小距离
-	cv::Mat classes = cv::Mat::zeros(cv::Size(1, dataNum), CV_32SC1);     //表示每个点属于哪个类别
+	Mat distance = cv::Mat::zeros(cv::Size(1, dataNum), CV_32FC1); //表示所有样本到当前聚类中心的距离
+	Mat minDistance = cv::Mat::zeros(cv::Size(1, dataNum), CV_32FC1); //取较小距离
+	Mat classes = cv::Mat::zeros(cv::Size(1, dataNum), CV_32SC1);     //表示每个点属于哪个类别
 	centerIndex.push_back(index); //保存第一个聚类中心
 
-	for (size_t i = 0; i < dataNum; i++) 
+	for (int i = 0; i < dataNum; i++) 
 	{
 		double* ptr1 = data.ptr<double>(i);
 		double* ptrCen = data.ptr<double>(centerIndex[0]);
@@ -278,7 +284,7 @@ Mat  MaxMinDisFun(Mat data, float Theta, vector<int>& centerIndex)
 	{
 		k = k + 1;
 		centerIndex.push_back(index); //新的聚类中心
-		for (size_t i = 0; i < dataNum; i++)
+		for (int i = 0; i < dataNum; i++)
 		{
 			double* ptr1 = data.ptr<double>(i);
 			double* ptrCen = data.ptr<double>(centerIndex[k]);
@@ -287,7 +293,7 @@ Mat  MaxMinDisFun(Mat data, float Theta, vector<int>& centerIndex)
 			//按照当前最近临方式分类，哪个近就分哪个类别
 			// 到当前聚类中心的距离 < 到上一个聚类中心的距离，则划分为当前聚类中心
 			// 但应该考虑同一目标位置相近且不超过一定误差范围
-			if (distance.at<float>(i, 0) < minDistance.at<float>(i, 0) && distance.at<float>(i, 0) < 200)
+			if (distance.at<float>(i, 0) < minDistance.at<float>(i, 0)/* && distance.at<float>(i, 0) < 200*/)
 			{
 				minDistance.at<float>(i, 0) = distance.at<float>(i, 0);
 				classes.at<int>(i, 0) = k + 1;
@@ -298,6 +304,71 @@ Mat  MaxMinDisFun(Mat data, float Theta, vector<int>& centerIndex)
 		index = maxLoc.y;
 	}
 	return classes;
+}
+int findKmax(vector<uavData> uavDatas)
+{
+	int Kmax = uavDatas[0].targetPosition.size();
+	for (int i = 1; i < uavDatas.size(); ++i)
+	{
+		if (uavDatas[i].targetPosition.size()>Kmax)
+		{
+			Kmax = uavDatas[i].targetPosition.size();
+		}
+	}
+	return Kmax;
+}
+
+int findKmin(vector<uavData> uavDatas)
+{
+	int Kmin = uavDatas[0].targetPosition.size();
+	for (int i = 1; i < uavDatas.size(); ++i)
+	{
+		if (uavDatas[i].targetPosition.size()<Kmin)
+		{
+			Kmin = uavDatas[i].targetPosition.size();
+		}
+	}
+	return Kmin;
+}
+
+double getS2(Mat data, Mat tempClasses, vector<int> centerIndex)
+{
+	vector<Point2f> Kpoint; // 存放聚类中心的坐标
+	vector<double> disMeans(centerIndex.size(), 0); // 存放每一类的平均距离
+	// 统计每一类的聚类中心坐标
+	for (int i = 0; i < centerIndex.size(); ++i)
+	{
+		Kpoint.push_back(Point2f(data.at<double>(centerIndex[i], 0), data.at<double>(centerIndex[i], 1)));
+	}
+	
+
+	for (int i = 0; i < tempClasses.rows; ++i) // 遍历每一条数据
+	{
+		int nClass = tempClasses.at<int>(i, 0) - 1; // 该数据是哪一类
+		Point2f nP(data.at<double>(i, 0), data.at<double>(i, 1)); // 该点的坐标
+		double dis = getDistance(nP, Kpoint[nClass]); // 计算该点到对应聚类中心的距离
+		disMeans[nClass] += dis;
+	}
+	// 每条数据对应的类转换为vector
+	vector<int> Classes(tempClasses.begin<int>(), tempClasses.end<int>());
+	for (int i = 0; i < centerIndex.size(); ++i)
+	{
+		disMeans[i] = disMeans[i] / count(Classes.begin(), Classes.end(), i+1);
+	}
+	double disMean = 0;
+	for (int i = 0; i < disMeans.size(); ++i)
+	{
+		disMean += disMeans[i];
+	}
+	disMean = disMean / disMeans.size();
+	double variance = 0.0;
+	for (double value : disMeans) 
+	{
+		double diff = value - disMean;
+		variance += diff * diff;
+	}
+	variance /= disMeans.size();
+	return variance;
 }
 
 /*多属性关联*/
@@ -316,37 +387,67 @@ void MAA(vector<uavData> uavDatas,Mat& mImage)
 			m++;
 		}
 	}
-	
-	vector<int> centerIndex;
-	// 目前取0.3较为合理
-	float Theta = 0.1; // 该参数应根据雷达误差和目标最近距离综合设定。越小则簇的数量越多，可能聚类不准。越大则簇越少，可能聚类不准
-	Mat classes = MaxMinDisFun(data, Theta, centerIndex);
-
-	// 绘图
-	map<int,int> cnt;
-	
-	classes.convertTo(classes, CV_8UC1);
-	//Mat mImage = Mat::zeros(5000, 5000, CV_8UC3);
-	uchar* pcls = classes.data;
-	int k = 0;
-	for (int i = 0; i < uavDatas.size(); ++i)
+	// 多属性关联(聚类)
+	vector<int> centerIndex; // 存放聚类中心是第几条数据
+	float Theta = 0.2; // 该参数应根据雷达误差和目标最近距离综合设定。越小则簇的数量越多,越大则簇越少
+	Mat classes;
+	//Mat tempClasses = MaxMinDisFun(data, Theta, 0, centerIndex); // 聚类
+	//classes = tempClasses;
+	int kmax = findKmax(uavDatas);
+	int kmin = findKmin(uavDatas);
+	for (int stt = 0; stt < data.rows*data.cols; ++stt)
 	{
-		for (int j = 0; j < uavDatas[i].targetPosition.size(); ++j)
+		Mat tempClasses = MaxMinDisFun(data, Theta, stt, centerIndex); // 聚类
+		if (centerIndex.size() < kmin || centerIndex.size() > kmax)
+			continue;
+		// 方差
+		double s2 = 0;
+		s2 = getS2(data, tempClasses, centerIndex);
+		if (s2 > 0.8)
+			classes = tempClasses;
+		else
+			continue;
+	/*	classes = tempClasses;*/
+		// 绘图
+		map<int, int> cnt;
+		classes.convertTo(classes, CV_8UC1);
+		// 绘制聚类中心(白色)
+		for (int i = 0; i < centerIndex.size(); ++i)
 		{
-			uavDatas[i].targetPosition[j].y = mImage.rows - uavDatas[i].targetPosition[j].y;
-			putText(mImage, std::to_string(pcls[k++]), uavDatas[i].targetPosition[j] + Point2f(-30, 0),
-				cv::FONT_HERSHEY_SIMPLEX, 2, CV_RGB(255, 255, 255), 2);
-
-			if (!cnt.count(pcls[k-1])) // 第一次出现(即聚类中心)画白色
-			{
-				cnt.insert({ pcls[k - 1], 0 });
-				cnt[pcls[k - 1]]++;
-				circle(mImage, uavDatas[i].targetPosition[j], 10, colors[20], -1);
-			}
-			else
-				circle(mImage, uavDatas[i].targetPosition[j], 10, colors[i], -1);
+			int cc = centerIndex[i];
+			Point2f tg;
+			tg.x = data.at<double>(cc, 0);
+			tg.y = mImage.rows - data.at<double>(cc, 1);
+			circle(mImage, tg, 10, colors[20], -1);
 		}
+		// 同一类目标绘制同一标签
+		int k = 0;
+		uchar* pcls = classes.data;
+		for (int i = 0; i < uavDatas.size(); ++i)
+		{
+			for (int j = 0; j < uavDatas[i].targetPosition.size(); ++j)
+			{
+				uavDatas[i].targetPosition[j].y = mImage.rows - uavDatas[i].targetPosition[j].y;
+				putText(mImage, std::to_string(pcls[k++]), uavDatas[i].targetPosition[j] + Point2f(-30, 0),
+					cv::FONT_HERSHEY_SIMPLEX, 2, CV_RGB(255, 255, 255), 2);
+				//circle(mImage, uavDatas[i].targetPosition[j], 10, colors[i], -1);
+				if (!cnt.count(pcls[k-1])) // 第一次出现(即聚类中心)画白色
+				{
+					cnt.insert({ pcls[k - 1], 0 });
+					cnt[pcls[k - 1]]++;
+					circle(mImage, uavDatas[i].targetPosition[j], 10, colors[20], -1);
+				}
+				else
+				{
+					circle(mImage, uavDatas[i].targetPosition[j], 10, colors[i], -1);
+					cnt[pcls[k - 1]]++;
+				}	
+			}
+		}
+		centerIndex.clear();
+		mImage = Mat::zeros(mImage.rows, mImage.cols, mImage.type());
 	}
+	
 	waitKey();
 		
 }
@@ -356,7 +457,7 @@ int main()
 {
 	// 5000x5000像素， 1像素 = 1米
 	Mat RealLocationImage = Mat::zeros(Size(5000, 5000), CV_8UC3);
-	int colsMidIndex = RealLocationImage.cols / 2; // 主目标x方向坐标
+	int colsMidIndex = RealLocationImage.cols / 2; // 主目标x方向坐标	
 	int rowsIndex = RealLocationImage.rows - 100; // 主目标y方向坐标
 	int textSize = 2; // 绘图文字大小
 	int pointSize = 10; // 绘图目标大小
@@ -375,6 +476,7 @@ int main()
 	coordinatCvt(sysLocationImage, uavDatas, center);
 	// 画出目标在大地坐标系位置
 	drawPoint(RealLocationImage, targetLocation, Scalar(0, 255, 255), 0);
+	// 画出目标在系统坐标系的位置
 	/*for (int i = 0; i < uavDatas.size(); ++i)
 	{
 		int textIndex = 0;
@@ -384,8 +486,9 @@ int main()
 	int ntime = 60; // 60秒
 	for (int i = 0; i < ntime; ++i)
 	{
-		MAA(uavDatas, sysLocationImage);
 		// 多属性关联
+		MAA(uavDatas, sysLocationImage);
+		
 		// 状态更新
 	}
 
@@ -413,10 +516,14 @@ inline double getdisTheta(Point2f uav, Point2f target)
 	//return angle * 180 / CV_PI; // 角度
 }
 
-/*
-first commit: 最初各个函数还没写好
-second commit: 完成了各物体静态时数据生成与转换的函数
-third commit: 完成了最大最小距离聚类，点多的时候很差
-4th commit: 完成了最大最小聚类的修改，加入了最近邻的一些限制，效果改善，但目标距离较近时仍可能聚类错误。
-			下一步考虑雷达测量误差、目标之间的距离 与 聚类中心参数和最近邻参数的关系
-*/
+// 笛卡尔坐标系 获得目标径向速度（向我方行驶）
+double getRSpeed(Point2f targetSpeed, double theta)
+{
+	double speed = 0;
+	double spdTheta = CV_PI - targetSpeed.y + theta;
+	speed = abs(targetSpeed.x * cos(spdTheta));
+	if (spdTheta <= CV_PI / 2)
+		return speed;// 靠近无人机
+	else
+		return -speed;// 远离无人机
+}
