@@ -33,6 +33,7 @@ public:
 	}
 };
 
+// 颜色
 Scalar colors[] = { Scalar(0, 0, 255),    // 红色 0
 Scalar(0, 255, 0),    // 绿色 1
 Scalar(0, 128, 255),  // 橙色 2
@@ -88,9 +89,14 @@ void targetInfoInit(vector<Point2f>& targetLocation, vector<Point2f>& targetSpee
 	targetLocation.push_back(Point2f(colsMidIndex + dist3, rowsIndex)); // 6			
 
 	// 速度信息
-	targetSpeed.push_back(Point(15, 270 * CV_PI / 180)); targetSpeed.push_back(Point(15, 270 * CV_PI / 180));
-	targetSpeed.push_back(Point(15, 270 * CV_PI / 180)); targetSpeed.push_back(Point(15, 270 * CV_PI / 180));
-	targetSpeed.push_back(Point(15, 270 * CV_PI / 180));
+	int spd = 60;
+	targetSpeed.push_back(Point2f(spd, 270 * CV_PI / 180)); targetSpeed.push_back(Point2f(spd, 270 * CV_PI / 180));
+	targetSpeed.push_back(Point2f(spd, 270 * CV_PI / 180)); targetSpeed.push_back(Point2f(spd, 270 * CV_PI / 180));
+	targetSpeed.push_back(Point2f(spd, 270 * CV_PI / 180)); targetSpeed.push_back(Point2f(spd, 270 * CV_PI / 180)); targetSpeed.push_back(Point2f(spd, 270 * CV_PI / 180));
+	targetSpeed.push_back(Point2f(20, 270 * CV_PI / 180)); targetSpeed.push_back(Point2f(spd, 270 * CV_PI / 180));
+	targetSpeed.push_back(Point2f(spd, 270 * CV_PI / 180)); targetSpeed.push_back(Point2f(spd, 270 * CV_PI / 180)); targetSpeed.push_back(Point2f(spd, 270 * CV_PI / 180));
+	targetSpeed.push_back(Point2f(spd, 270 * CV_PI / 180)); targetSpeed.push_back(Point2f(spd, 270 * CV_PI / 180));
+	targetSpeed.push_back(Point2f(spd, 270 * CV_PI / 180)); targetSpeed.push_back(Point2f(spd, 270 * CV_PI / 180));
 }
 
 /*
@@ -155,9 +161,10 @@ void coordinatCvt(Mat& sysLocationImage, vector<uavData>& uavDatas, Point2f cent
 	{
 		for (int j = 0; j < uavDatas.size(); ++j)
 		{
+			// 目标相对无人机的距离
 			double dx = uavDatas[j].distance[i] * cos(uavDatas[j].disTheta[i]);
 			double dy = uavDatas[j].distance[i] * sin(uavDatas[j].disTheta[i]);
-			// 转化为同一坐标系
+			// 无人机相对系统坐标原点的距离
 			if (uavDatas[j].position.x - center.x <= 0)
 				dx += center.x - uavDatas[j].position.x;
 			else
@@ -166,8 +173,8 @@ void coordinatCvt(Mat& sysLocationImage, vector<uavData>& uavDatas, Point2f cent
 				dy += center.y - uavDatas[j].position.y;
 			else
 				dy -= uavDatas[j].position.y - center.y;
-			Point2f dpt = Point2f(dx, -dy);
-			Point2f targ = center + dpt;
+			Point2f dpt = Point2f(dx, -dy); // 目标相对系统坐标原点的距离
+			Point2f targ = center + dpt; // 目标在绝对坐标系下的坐标
 			uavDatas[j].targetPosition.push_back(targ);
 
 			// 绘图
@@ -305,6 +312,7 @@ Mat  MaxMinDisFun(Mat data1, float Theta, int stt, vector<int>& centerIndex)
 	}
 	return classes;
 }
+
 int findKmax(vector<uavData> uavDatas)
 {
 	int Kmax = uavDatas[0].targetPosition.size();
@@ -367,7 +375,7 @@ double getS2(Mat data, Mat tempClasses, vector<int> centerIndex)
 		double diff = value - disMean;
 		variance += diff * diff;
 	}
-	variance /= disMeans.size();
+	variance /= 1.0 * disMeans.size();
 	return variance;
 }
 
@@ -389,25 +397,37 @@ void MAA(vector<uavData> uavDatas,Mat& mImage)
 	}
 	// 多属性关联(聚类)
 	vector<int> centerIndex; // 存放聚类中心是第几条数据
-	float Theta = 0.2; // 该参数应根据雷达误差和目标最近距离综合设定。越小则簇的数量越多,越大则簇越少
+	float Theta = 0.1; // 该参数应根据雷达误差和目标最近距离综合设定。越小则簇的数量越多,越大则簇越少
+	vector<Mat> vclasses;
 	Mat classes;
 	//Mat tempClasses = MaxMinDisFun(data, Theta, 0, centerIndex); // 聚类
 	//classes = tempClasses;
 	int kmax = findKmax(uavDatas);
 	int kmin = findKmin(uavDatas);
-	for (int stt = 0; stt < data.rows*data.cols; ++stt)
+	int sttCNT = 0;
+	int flag = 0;
+	for (int stt = 0; stt < data.rows; ++stt)
 	{
 		Mat tempClasses = MaxMinDisFun(data, Theta, stt, centerIndex); // 聚类
 		if (centerIndex.size() < kmin || centerIndex.size() > kmax)
 			continue;
+		
 		// 方差
-		double s2 = 0;
-		s2 = getS2(data, tempClasses, centerIndex);
+		double s2 = getS2(data, tempClasses, centerIndex);
+		//s2 = getS2(data, tempClasses, centerIndex);
 		if (s2 > 0.8)
+		{
+			vclasses.push_back(tempClasses);
 			classes = tempClasses;
+			sttCNT = stt;
+		}
 		else
+		{
+			vclasses.push_back(tempClasses);
 			continue;
-	/*	classes = tempClasses;*/
+		}
+			
+		/*classes = tempClasses;*/
 		// 绘图
 		map<int, int> cnt;
 		classes.convertTo(classes, CV_8UC1);
@@ -428,30 +448,60 @@ void MAA(vector<uavData> uavDatas,Mat& mImage)
 			for (int j = 0; j < uavDatas[i].targetPosition.size(); ++j)
 			{
 				uavDatas[i].targetPosition[j].y = mImage.rows - uavDatas[i].targetPosition[j].y;
-				putText(mImage, std::to_string(pcls[k++]), uavDatas[i].targetPosition[j] + Point2f(-30, 0),
-					cv::FONT_HERSHEY_SIMPLEX, 2, CV_RGB(255, 255, 255), 2);
+				/*putText(mImage, std::to_string(pcls[k++]), uavDatas[i].targetPosition[j] + Point2f(-30, 0),
+					cv::FONT_HERSHEY_SIMPLEX, 2, CV_RGB(255, 255, 255), 2);*/
 				//circle(mImage, uavDatas[i].targetPosition[j], 10, colors[i], -1);
 				if (!cnt.count(pcls[k-1])) // 第一次出现(即聚类中心)画白色
 				{
 					cnt.insert({ pcls[k - 1], 0 });
 					cnt[pcls[k - 1]]++;
-					circle(mImage, uavDatas[i].targetPosition[j], 10, colors[20], -1);
+					circle(mImage, uavDatas[i].targetPosition[j], 10, colors[i], -1);
+					putText(mImage, std::to_string(pcls[k++]), uavDatas[i].targetPosition[j] + Point2f(-30, 0),
+						cv::FONT_HERSHEY_SIMPLEX, 2, CV_RGB(255, 255, 255), 2);
 				}
 				else
 				{
 					circle(mImage, uavDatas[i].targetPosition[j], 10, colors[i], -1);
 					cnt[pcls[k - 1]]++;
+					putText(mImage, std::to_string(pcls[k++]), uavDatas[i].targetPosition[j] + Point2f(-30, 0),
+						cv::FONT_HERSHEY_SIMPLEX, 2, CV_RGB(255, 255, 255), 2);
 				}	
 			}
 		}
-		centerIndex.clear();
-		mImage = Mat::zeros(mImage.rows, mImage.cols, mImage.type());
+		break;
 	}
 	
-	waitKey();
 		
 }
 
+void statesUpdate(vector<Point2f>& targetLocation, vector<Point2f>& targetSpeed, vector<uavData>& uavDatas, Mat sysLocationImage, Point2f center, double colsMidIndex, double rowsIndex)
+{
+	
+	// 目标位置更新
+	for (int i = 0; i < targetLocation.size(); ++i)
+	{
+		double spd = targetSpeed[i].x;
+		double theta = targetSpeed[i].y;
+		targetLocation[i] += Point2f(spd*cos(theta), spd*sin(theta));
+	}
+	// 我方无人机数据更新
+	for (int i = 0; i < uavDatas.size(); ++i)
+	{
+		double spd = uavDatas[i].uavSpeed.x;
+		double theta = uavDatas[i].uavSpeed.y;
+		uavDatas[i].position += Point2f(spd*cos(theta), spd*sin(theta));
+		uavDatas[i].distance.clear();
+		uavDatas[i].disTheta.clear();
+		uavDatas[i].targetPosition.clear();
+		uavDatas[i].speed.clear();
+		uavDatas[i].HRRP.clear();
+	}
+	// 根据我方无人机坐标和目标信息，计算我方无人机测到的雷达信息(含雷达误差)
+	calculateRadarInfo(uavDatas, targetLocation, targetSpeed);
+	// 将无人机获得的目标位置，转化到同一坐标系
+	coordinatCvt(sysLocationImage, uavDatas, center);
+
+}
 
 int main()
 {
@@ -486,10 +536,18 @@ int main()
 	int ntime = 60; // 60秒
 	for (int i = 0; i < ntime; ++i)
 	{
-		// 多属性关联
+		// 置空绘图
+		sysLocationImage = Mat::zeros(Size(5000, 5000), CV_8UC3);
+		RealLocationImage = Mat::zeros(Size(5000, 5000), CV_8UC3);
+		// 更新绘图显示，多属性关联
+		drawPoint(RealLocationImage, targetLocation, Scalar(0, 255, 255), 0);
 		MAA(uavDatas, sysLocationImage);
-		
 		// 状态更新
+		statesUpdate(targetLocation, targetSpeed, uavDatas, sysLocationImage, center, colsMidIndex, rowsIndex);
+		Mat temp;
+		resize(sysLocationImage, temp, Size(0, 0), 0.4, 0.4);
+		imshow("aaa", temp);
+		waitKey();
 	}
 
 
@@ -497,6 +555,10 @@ int main()
 	waitKey();
 	return 0;
 }
+
+
+
+
 
 // 笛卡尔坐标系 获取两点间的距离
 inline double getDistance(Point2f p1, Point2f p2)
