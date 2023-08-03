@@ -25,7 +25,7 @@ public:
 	vector<double> speed; // 目标径向速度   
 	/* 其他数据 */
 	vector<vector<double>> HRRP; // 目标一维距离像
-		/* ... */
+	/* ... */
 	uavData(Point2f position, Point2f uavSpeed)
 	{
 		this->position = position;
@@ -69,12 +69,12 @@ void targetInfoInit(vector<Point2f>& targetLocation, vector<Point2f>& targetSpee
 {
 	// 位置信息
 	targetLocation.push_back(Point2f(colsMidIndex, rowsIndex)); //主要目标
-	int angle1 = 60, dist1 = 500;
+	int angle1 = 60, dist1 = 500;             
 	targetLocation.push_back(Point2f(colsMidIndex - dist1, rowsIndex)); // 距主要目标500米(60度等分排布)  1
 	targetLocation.push_back(Point2f(colsMidIndex - dist1 * cos(1.0 * angle1 * CV_PI / 180), rowsIndex - dist1 * sin(1.0 * angle1 * CV_PI / 180))); // 2
 	targetLocation.push_back(Point2f(colsMidIndex + dist1 * cos(1.0 * angle1 * CV_PI / 180), rowsIndex - dist1 * sin(1.0 * angle1 * CV_PI / 180))); // 3
 	targetLocation.push_back(Point2f(colsMidIndex + dist1, rowsIndex)); // 4
-	int angle2 = 45, dist2 = 1000; 
+	int angle2 = 45, dist2 = 1000;    
 	targetLocation.push_back(Point2f(colsMidIndex - dist2, rowsIndex)); // 相距1千米(45度等分排布) 1
 	targetLocation.push_back(Point2f(colsMidIndex - dist2 * cos(1.0 * angle2 * CV_PI / 180), rowsIndex - dist2 * sin(1.0 * angle2 * CV_PI / 180))); // 2
 	targetLocation.push_back(Point2f(colsMidIndex - dist2 * cos(1.0 * angle2 * 2 * CV_PI / 180), rowsIndex - dist2 * sin(1.0 * angle2 * 2 * CV_PI / 180))); // 3
@@ -86,17 +86,21 @@ void targetInfoInit(vector<Point2f>& targetLocation, vector<Point2f>& targetSpee
 	targetLocation.push_back(Point2f(colsMidIndex - dist3 * cos(1.0 * angle3 * 2 * CV_PI / 180), rowsIndex - dist3 * sin(1.0 * angle3 * 2 * CV_PI / 180))); // 3
 	targetLocation.push_back(Point2f(colsMidIndex + dist3 * cos(1.0 * angle3 * 2 * CV_PI / 180), rowsIndex - dist3 * sin(1.0 * angle3 * 2 * CV_PI / 180))); // 4
 	targetLocation.push_back(Point2f(colsMidIndex + dist3 * cos(1.0 * angle3 * CV_PI / 180), rowsIndex - dist3 * sin(1.0 * angle3 * CV_PI / 180))); // 5
-	targetLocation.push_back(Point2f(colsMidIndex + dist3, rowsIndex)); // 6			
-
+	targetLocation.push_back(Point2f(colsMidIndex + dist3, rowsIndex)); // 6	
+	int angle4 = 60  , dist4 = 2500; // 假设的一个干扰信号  
+	targetLocation.push_back(Point2f(colsMidIndex - dist4 * cos(1.0 * angle4 * 2 * CV_PI / 180), rowsIndex - dist4 * sin(1.0 * angle4 * 2 * CV_PI / 180)));
 	// 速度信息
-	int spd = 60;
-	targetSpeed.push_back(Point2f(spd, 270 * CV_PI / 180)); targetSpeed.push_back(Point2f(spd, 270 * CV_PI / 180));
-	targetSpeed.push_back(Point2f(spd, 270 * CV_PI / 180)); targetSpeed.push_back(Point2f(spd, 270 * CV_PI / 180));
-	targetSpeed.push_back(Point2f(spd, 270 * CV_PI / 180)); targetSpeed.push_back(Point2f(spd, 270 * CV_PI / 180)); targetSpeed.push_back(Point2f(spd, 270 * CV_PI / 180));
-	targetSpeed.push_back(Point2f(20, 270 * CV_PI / 180)); targetSpeed.push_back(Point2f(spd, 270 * CV_PI / 180));
-	targetSpeed.push_back(Point2f(spd, 270 * CV_PI / 180)); targetSpeed.push_back(Point2f(spd, 270 * CV_PI / 180)); targetSpeed.push_back(Point2f(spd, 270 * CV_PI / 180));
-	targetSpeed.push_back(Point2f(spd, 270 * CV_PI / 180)); targetSpeed.push_back(Point2f(spd, 270 * CV_PI / 180));
-	targetSpeed.push_back(Point2f(spd, 270 * CV_PI / 180)); targetSpeed.push_back(Point2f(spd, 270 * CV_PI / 180));
+	int spd = 60; int spdTheta = 270;
+	targetSpeed.push_back(Point2f(spd, spdTheta * CV_PI / 180)); targetSpeed.push_back(Point2f(spd, spdTheta  * CV_PI / 180));
+	targetSpeed.push_back(Point2f(spd, spdTheta * CV_PI / 180)); targetSpeed.push_back(Point2f(spd, spdTheta  * CV_PI / 180));
+	targetSpeed.push_back(Point2f(spd, spdTheta * CV_PI / 180)); targetSpeed.push_back(Point2f(spd, spdTheta  * CV_PI / 180)); 
+	targetSpeed.push_back(Point2f(spd, spdTheta * CV_PI / 180)); targetSpeed.push_back(Point2f(spd, spdTheta  * CV_PI / 180)); 
+	targetSpeed.push_back(Point2f(spd, spdTheta * CV_PI / 180)); targetSpeed.push_back(Point2f(spd, spdTheta  * CV_PI / 180));
+	targetSpeed.push_back(Point2f(spd, spdTheta * CV_PI / 180)); targetSpeed.push_back(Point2f(spd, spdTheta  * CV_PI / 180));
+	targetSpeed.push_back(Point2f(spd, spdTheta * CV_PI / 180)); targetSpeed.push_back(Point2f(spd, spdTheta  * CV_PI / 180));
+	targetSpeed.push_back(Point2f(spd, spdTheta * CV_PI / 180)); targetSpeed.push_back(Point2f(spd, spdTheta  * CV_PI / 180));
+	targetSpeed.push_back(Point2f(spd, spdTheta  * CV_PI / 180));  
+
 }
 
 /*
@@ -106,10 +110,10 @@ double rowsIndex: 主要目标的纵坐标
 */
 void uavInfoInit(vector<uavData>& uavDatas, double colsMidIndex, double rowsIndex)
 {
-	uavData uav1(Point2f(colsMidIndex - 5000, rowsIndex - 10000), Point2f(15, 90 * CV_PI / 180)), 
-		uav2(Point2f(colsMidIndex + 5000, rowsIndex - 10000), Point2f(15, 90 * CV_PI / 180)),
-		uav3(Point2f(colsMidIndex - 5000, rowsIndex - 20000), Point2f(15, 90 * CV_PI / 180)),
-		uav4(Point2f(colsMidIndex + 5000, rowsIndex - 20000), Point2f(15, 90 * CV_PI / 180));
+	uavData uav1(Point2f(colsMidIndex - 50000, rowsIndex - 100000), Point2f(15, 90 * CV_PI / 180)), 
+		uav2(Point2f(colsMidIndex + 50000, rowsIndex - 100000), Point2f(15, 90 * CV_PI / 180)),
+		uav3(Point2f(colsMidIndex - 50000, rowsIndex - 200000), Point2f(15, 90 * CV_PI / 180)),
+		uav4(Point2f(colsMidIndex + 50000, rowsIndex - 200000), Point2f(15, 90 * CV_PI / 180));
 
 	uavDatas.push_back(uav1); uavDatas.push_back(uav2); uavDatas.push_back(uav3); uavDatas.push_back(uav4);
 }
@@ -127,8 +131,8 @@ void calculateRadarInfo(vector<uavData>& uavDatas, vector<Point2f>& targetLocati
 		random_device rd;
 		mt19937 gen(rd());
 		shuffle(targetLocation.begin(), targetLocation.end(), gen);
-		int radarDisError = 99; // 正负radarDisError米的测距误差
-		int radarAngError = 0.2; // 左右radarAngError度的测角误差
+		int radarDisError = 100; // 正负radarDisError米的测距误差
+		int radarAngError = 0.5; // 左右radarAngError度的测角误差
 		for (int i = 0; i < targetLocation.size(); ++i)
 		{
 			// 雷达误差
@@ -141,7 +145,8 @@ void calculateRadarInfo(vector<uavData>& uavDatas, vector<Point2f>& targetLocati
 			//uavDatas[m].speed.push_back(getRSpeed(targetSpeed[i], getdisTheta(uavDatas[m].position, targetLocation[i]) + ethe));//目标径向速度
 		}
 	}
-
+	// 删除某飞行器的几条数据，模拟没有检测到所有目标的情况
+	/*uavDatas[0].distance.pop_back(); uavDatas[0].disTheta.pop_back();*/
 }
 
 /*
@@ -157,54 +162,48 @@ void coordinatCvt(Mat& sysLocationImage, vector<uavData>& uavDatas, Point2f cent
 	//Mat sysLocationImage = Mat::zeros(Size(5000, 5000), CV_8UC3);
 	int cc = 0;
 	Point2f drawCenter(sysLocationImage.cols / 2, sysLocationImage.rows / 2);
-	for (int i = 0; i < uavDatas[0].distance.size(); ++i) // 1
+	//for (int i = 0; i < uavDatas[0].distance.size(); ++i) // 1
+	//{
+	//	for (int j = 0; j < uavDatas.size(); ++j)
+	//	{
+	//		// 目标相对无人机的距离
+	//		double dx = uavDatas[j].distance[i] * cos(uavDatas[j].disTheta[i]);
+	//		double dy = uavDatas[j].distance[i] * sin(uavDatas[j].disTheta[i]);
+	//		// 无人机相对系统坐标原点的距离
+	//		if (uavDatas[j].position.x - center.x <= 0)
+	//			dx += center.x - uavDatas[j].position.x;
+	//		else
+	//			dx -= uavDatas[j].position.x - center.x;
+	//		if (uavDatas[j].position.y - center.y <= 0)
+	//			dy += center.y - uavDatas[j].position.y;
+	//		else
+	//			dy -= uavDatas[j].position.y - center.y;
+	//		Point2f dpt = Point2f(dx, -dy); // 目标相对系统坐标原点的距离
+	//		Point2f targ = center + dpt; // 目标在绝对坐标系下的坐标
+	//		uavDatas[j].targetPosition.push_back(targ);
+	//	}
+	//}
+	for (int i = 0; i < uavDatas.size(); ++i) // 1
 	{
-		for (int j = 0; j < uavDatas.size(); ++j)
+		for (int j = 0; j < uavDatas[i].distance.size(); ++j)
 		{
 			// 目标相对无人机的距离
-			double dx = uavDatas[j].distance[i] * cos(uavDatas[j].disTheta[i]);
-			double dy = uavDatas[j].distance[i] * sin(uavDatas[j].disTheta[i]);
+			double dx = uavDatas[i].distance[j] * cos(uavDatas[i].disTheta[j]);
+			double dy = uavDatas[i].distance[j] * sin(uavDatas[i].disTheta[j]);
 			// 无人机相对系统坐标原点的距离
-			if (uavDatas[j].position.x - center.x <= 0)
-				dx += center.x - uavDatas[j].position.x;
+			if (uavDatas[i].position.x - center.x <= 0)
+				dx += center.x - uavDatas[i].position.x;
 			else
-				dx -= uavDatas[j].position.x - center.x;
-			if (uavDatas[j].position.y - center.y <= 0)
-				dy += center.y - uavDatas[j].position.y;
+				dx -= uavDatas[i].position.x - center.x;
+			if (uavDatas[i].position.y - center.y <= 0)
+				dy += center.y - uavDatas[i].position.y;
 			else
-				dy -= uavDatas[j].position.y - center.y;
+				dy -= uavDatas[i].position.y - center.y;
 			Point2f dpt = Point2f(dx, -dy); // 目标相对系统坐标原点的距离
 			Point2f targ = center + dpt; // 目标在绝对坐标系下的坐标
-			uavDatas[j].targetPosition.push_back(targ);
-
-			// 绘图
-			/*switch (j)
-			{
-			case 0:
-				circle(sysLocationImage, targ, 10, Scalar(255, 123, 255), -1);
-				putText(sysLocationImage, std::to_string(cc), targ + Point2f(0, 30),
-					cv::FONT_HERSHEY_SIMPLEX, textSize, CV_RGB(255, 123, 255), 1.8);
-				break;
-			case 1:
-				circle(sysLocationImage, targ, 10, Scalar(0, 255, 0), -1);
-				putText(sysLocationImage, std::to_string(cc), targ + Point2f(0, -15),
-					cv::FONT_HERSHEY_SIMPLEX, textSize, CV_RGB(0, 255, 0), 1.8);
-				break;
-			case 2:
-				circle(sysLocationImage, targ, 10, Scalar(0, 0, 255), -1);
-				putText(sysLocationImage, std::to_string(cc), targ + Point2f(-30, 0),
-					cv::FONT_HERSHEY_SIMPLEX, textSize, CV_RGB(255, 0, 0), 1.8);
-				break;
-			case 3:
-				circle(sysLocationImage, targ, 10, Scalar(0, 255, 255), -1);
-				putText(sysLocationImage, std::to_string(cc), targ + Point2f(-30, 0),
-					cv::FONT_HERSHEY_SIMPLEX, textSize, CV_RGB(255, 0, 0), 1.8);
-				break;
-			}*/
+			uavDatas[i].targetPosition.push_back(targ);
 		}
-		cc++;
 	}
- 	waitKey();
 }
 
 /*
@@ -228,8 +227,6 @@ int drawPoint(Mat& input, vector<Point2f> vPoints, Scalar pointColor, int textIn
 	}
 	return 0;
 }
-
-
 
 /*计算欧式距离*/
 float calcuDistance(double* ptr, double* ptrCen, int cols) {
@@ -382,7 +379,12 @@ double getS2(Mat data, Mat tempClasses, vector<int> centerIndex)
 /*多属性关联*/
 void MAA(vector<uavData> uavDatas,Mat& mImage)
 {
-	Mat data = Mat::zeros(uavDatas[0].targetPosition.size()*uavDatas.size(), 2, CV_64FC1);
+	int dataRows = 0;
+	for (int i = 0; i < uavDatas.size(); ++i)
+	{
+		dataRows += uavDatas[i].distance.size();
+	}
+	Mat data = Mat::zeros(dataRows, 2, CV_64FC1);
 	// 将每个无人机的目标位置数据导入聚类矩阵
 	int m = 0;
 	for (int i = 0; i < uavDatas.size(); ++i)
@@ -397,7 +399,7 @@ void MAA(vector<uavData> uavDatas,Mat& mImage)
 	}
 	// 多属性关联(聚类)
 	vector<int> centerIndex; // 存放聚类中心是第几条数据
-	float Theta = 0.1; // 该参数应根据雷达误差和目标最近距离综合设定。越小则簇的数量越多,越大则簇越少
+	float Theta = 0.2; // 该参数应根据雷达误差和目标最近距离综合设定。越小则簇的数量越多,越大则簇越少0.1
 	vector<Mat> vclasses;
 	Mat classes;
 	//Mat tempClasses = MaxMinDisFun(data, Theta, 0, centerIndex); // 聚类
@@ -405,29 +407,67 @@ void MAA(vector<uavData> uavDatas,Mat& mImage)
 	int kmax = findKmax(uavDatas);
 	int kmin = findKmin(uavDatas);
 	int sttCNT = 0;
-	int flag = 0;
+	int minCnt = 0, maxCnt = 0;
 	for (int stt = 0; stt < data.rows; ++stt)
 	{
 		Mat tempClasses = MaxMinDisFun(data, Theta, stt, centerIndex); // 聚类
-		if (centerIndex.size() < kmin || centerIndex.size() > kmax)
+		if (centerIndex.size() < kmin)
+		{
+			minCnt++;
+		}
+		if (centerIndex.size() > kmax)
+		{
+			maxCnt++;
+		}
+		if ((maxCnt + minCnt == stt + 1) && (maxCnt + minCnt != data.rows)) // 说明 执行了上面2个if中的一个
+		{
 			continue;
-		
-		// 方差
+		}
+		else if(maxCnt + minCnt == data.rows) // 要么没执行if，要么maxCnt + minCnt == data.rows
+		{
+			if (maxCnt > minCnt) // 聚类数量太多，应减少聚类数量
+			{
+				stt = -1;
+				Theta += 0.1;
+				maxCnt = minCnt = 0;
+				cout << "thresh ++ " << endl;
+				continue;
+			}
+			else // 聚类数量太少，应增加聚类数量
+			{
+				stt = -1;
+				maxCnt = minCnt = 0;
+				if (Theta > 0.1)
+				{
+					Theta -= 0.1;
+					cout << "thresh -- " << endl;
+					continue;
+				}
+			}
+			minCnt = maxCnt = 0;
+		}
+		//else // 没执行if且maxCnt + minCnt ！= data.rows
+		//{
+
+		//}
+
+		// 评价指标
 		double s2 = getS2(data, tempClasses, centerIndex);
-		//s2 = getS2(data, tempClasses, centerIndex);
-		if (s2 > 0.8)
+		if (s2 < 1000) // 与测距测角误差 及 与目标间的距离有关
 		{
 			vclasses.push_back(tempClasses);
 			classes = tempClasses;
 			sttCNT = stt;
+			cout << "GOOOOOOOOOD s2 = " << s2 << endl;
 		}
 		else
 		{
+			cout << "bad s2 = " << s2 << endl;
 			vclasses.push_back(tempClasses);
 			continue;
 		}
 			
-		/*classes = tempClasses;*/
+		classes = tempClasses;
 		// 绘图
 		map<int, int> cnt;
 		classes.convertTo(classes, CV_8UC1);
@@ -442,6 +482,7 @@ void MAA(vector<uavData> uavDatas,Mat& mImage)
 		}
 		// 同一类目标绘制同一标签
 		int k = 0;
+		int  textsize = 3;
 		uchar* pcls = classes.data;
 		for (int i = 0; i < uavDatas.size(); ++i)
 		{
@@ -457,17 +498,19 @@ void MAA(vector<uavData> uavDatas,Mat& mImage)
 					cnt[pcls[k - 1]]++;
 					circle(mImage, uavDatas[i].targetPosition[j], 10, colors[i], -1);
 					putText(mImage, std::to_string(pcls[k++]), uavDatas[i].targetPosition[j] + Point2f(-30, 0),
-						cv::FONT_HERSHEY_SIMPLEX, 2, CV_RGB(255, 255, 255), 2);
+						cv::FONT_HERSHEY_SIMPLEX, textsize, CV_RGB(255, 255, 255), textsize);
 				}
 				else
 				{
 					circle(mImage, uavDatas[i].targetPosition[j], 10, colors[i], -1);
 					cnt[pcls[k - 1]]++;
 					putText(mImage, std::to_string(pcls[k++]), uavDatas[i].targetPosition[j] + Point2f(-30, 0),
-						cv::FONT_HERSHEY_SIMPLEX, 2, CV_RGB(255, 255, 255), 2);
+						cv::FONT_HERSHEY_SIMPLEX, textsize, CV_RGB(255, 255, 255), textsize);
 				}	
 			}
 		}
+		putText(mImage, std::to_string(centerIndex.size()), Point2f(100, 100),
+			cv::FONT_HERSHEY_SIMPLEX, textsize, CV_RGB(255, 255, 255), textsize);
 		break;
 	}
 	
@@ -545,14 +588,12 @@ int main()
 		// 状态更新
 		statesUpdate(targetLocation, targetSpeed, uavDatas, sysLocationImage, center, colsMidIndex, rowsIndex);
 		Mat temp;
-		resize(sysLocationImage, temp, Size(0, 0), 0.4, 0.4);
+		resize(sysLocationImage, temp, Size(0, 0), 0.25  , 0.25); 
+
 		imshow("aaa", temp);
 		waitKey();
 	}
 
-
-	
-	waitKey();
 	return 0;
 }
 
@@ -568,7 +609,7 @@ inline double getDistance(Point2f p1, Point2f p2)
 	return sqrt(dx + dy);
 }
 
-// 笛卡尔坐标系 获取两点之间的角度
+// 笛卡尔坐标系 获取两点之间的角度tuytrfyt
 inline double getdisTheta(Point2f uav, Point2f target)
 {
 	double dx = (uav.x - target.x);
@@ -589,3 +630,4 @@ double getRSpeed(Point2f targetSpeed, double theta)
 	else
 		return -speed;// 远离无人机
 }
+
